@@ -92,7 +92,9 @@ Both workflows run on the Growlyze n8n instance.
 The dashboard has two passwords:
 
 - **Staff:** sees all tickets and can change their status.
-- **Admin:** also sees the admin section, with links to every n8n automation, the n8n run logs, the tickets data table, the ElevenLabs agent and its call history, and a link to each ticket's call recording and transcript.
+- **Admin:** also sees the **Activity log**: one timeline of every call received (from ElevenLabs call history), ticket created, emergency email sent or not sent, and status change. It can be viewed by day, month or year, with totals for the period and a recording link for each call.
+
+Tickets created, email results and status changes are stored in the `growlyze_activity_log` Data Table. Calls are read live from ElevenLabs using the `ElevenLabs API (Growlyze)` credential in n8n.
 
 A login lasts 12 hours. The intake key, the passwords and the session tokens are secrets kept in n8n and ElevenLabs only. Never commit them to this repo. To change a password, edit the **Check Password** node in the Dashboard workflow and publish it.
 

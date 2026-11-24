@@ -1,4 +1,6 @@
-# AI Maintenance Intake Agent for Property Managers
+# Growlyze AI Maintenance Intake Agent
+
+**By Growlyze: AI automation for property managers.**
 
 A 24/7 voice agent that answers tenant maintenance calls, collects every detail a technician needs, sorts each request by urgency, logs it automatically, and texts the on-call tech the moment there's an emergency.
 
@@ -98,10 +100,8 @@ See a full example in [docs/sample-call.md](docs/sample-call.md).
 - **Escalation:** add a phone call (not just SMS) or a backup technician if the first doesn't acknowledge.
 - **Languages:** the stack supports multilingual voices and transcription for non-English tenants.
 
-## Contact
+## About Growlyze
 
-Built by **Muhammad Saeed ur Rehman**, business systems & automation builder.
+Growlyze builds, deploys and runs this agent for property management companies. The agent answers tenant calls under each client's own company name, and Growlyze handles setup, hosting, monitoring and changes.
 
-📫 [saeedspace101@gmail.com](mailto:saeedspace101@gmail.com) · 💼 [LinkedIn](https://www.linkedin.com/in/muhammad-saeed-ur-rehman-57043724b)
-
-Want this set up for your properties, or a similar system for your business? Get in touch.
+Want this agent for your properties? Get in touch with the Growlyze team.

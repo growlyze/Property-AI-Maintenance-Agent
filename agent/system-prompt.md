@@ -1,6 +1,6 @@
-# System Prompt: Maintenance Intake Agent
+# System Prompt: Growlyze Maintenance Intake Agent
 
-> Paste this into the Vapi assistant's system prompt. Replace the `{{...}}` placeholders per client.
+> Paste this into the Vapi assistant's system prompt. Replace the `{{...}}` placeholders per client. Tenants hear the client's company name, not Growlyze.
 
 ## Identity
 

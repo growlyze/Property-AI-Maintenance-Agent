@@ -28,6 +28,6 @@
     }
   },
   "server": {
-    "url": "https://YOUR-N8N-HOST/webhook/vapi-maintenance-intake"
+    "url": "https://YOUR-N8N-HOST/webhook/growlyze-maintenance-intake"
   }
 }

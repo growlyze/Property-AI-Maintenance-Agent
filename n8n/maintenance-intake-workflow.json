@@ -1,10 +1,10 @@
 {
-  "name": "PM Maintenance Intake - Vapi to Sheets + On-call Alert",
+  "name": "Growlyze Maintenance Intake - Vapi to Sheets + On-call Alert",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "vapi-maintenance-intake",
+        "path": "growlyze-maintenance-intake",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -13,7 +13,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [0, 300],
-      "webhookId": "vapi-maintenance-intake"
+      "webhookId": "growlyze-maintenance-intake"
     },
     {
       "parameters": {

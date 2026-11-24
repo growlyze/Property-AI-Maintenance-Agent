@@ -1,5 +1,5 @@
 {
-  "name": "PM Maintenance Intake",
+  "name": "Growlyze Maintenance Intake",
   "firstMessage": "Thanks for calling the maintenance line. This is Emma. Is anyone in danger, or is there fire, gas or flooding right now?",
   "model": {
     "provider": "openai",

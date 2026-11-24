@@ -71,6 +71,12 @@ tr.detail td { background: #fff; border-top: none; }
 .ev .tx b { display: block; font-size: .92rem; }
 .ev .tx span { display: block; font-size: .84rem; opacity: .75; margin-top: .1rem; }
 .ic-call { background: var(--blue-lt); } .ic-ticket { background: var(--green-lt); } .ic-email { background: var(--yellow); } .ic-fail { background: var(--orange); } .ic-status { background: var(--purple-lt); }
+.unlock { padding: 1.5rem; margin-bottom: 2rem; max-width: 560px; }
+.unlock h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: .3rem; }
+.unlock .sub { margin-bottom: 1rem; }
+.unlock-row { display: flex; gap: .6rem; flex-wrap: wrap; }
+.unlock-row input { flex: 1 1 220px; min-width: 0; font: inherit; font-size: .95rem; color: var(--dark); background: #fff; border: 2px solid var(--dark); border-radius: 10px; padding: .6rem .8rem; }
+.unlock-err { margin-top: .8rem; font-weight: 700; color: var(--orange); }
 .calllink { color: var(--blue); font-weight: 700; }
 footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; text-align: center; }
 @media (max-width: 600px) { h1 { font-size: 1.4rem; } .stat .num { font-size: 1.6rem; } }
@@ -91,11 +97,19 @@ footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; tex
     </div>
   </header>
 
-  <!--ADMIN_START-->
   <nav class="tabs">
     <button class="tab on" data-tab="tickets">Tickets</button>
     <button class="tab" data-tab="logs">Activity log</button>
   </nav>
+  <form class="card unlock" id="log-unlock" hidden>
+    <h2>Activity log is locked</h2>
+    <p class="sub">Enter the activity log password to see calls, tickets, emails and status changes.</p>
+    <div class="unlock-row">
+      <input id="log-pw" type="password" autocomplete="off" placeholder="Activity log password" required>
+      <button class="btn" type="submit">Unlock</button>
+    </div>
+    <p class="unlock-err" id="log-err" hidden>That password is not correct.</p>
+  </form>
   <section id="logs-view" hidden>
     <div class="card logbar">
       <div class="seg">
@@ -119,8 +133,6 @@ footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; tex
     </section>
     <div class="card timeline" id="timeline"></div>
   </section>
-  <script id="__activity" type="application/json">__ACTIVITY__</script>
-  <!--ADMIN_END-->
 
   <div id="tickets-view">
   <section class="stats">
@@ -184,12 +196,33 @@ footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; tex
   var roleEl = document.getElementById('role');
   roleEl.textContent = ROLE === 'admin' ? 'Admin' : 'Staff';
   roleEl.className = 'role ' + (ROLE === 'admin' ? 'admin' : 'staff');
-  var actData = document.getElementById('__activity');
-  if (actData) setupActivity(actData);
+  var logsLoaded = false;
+  function showTab(name) {
+    document.querySelectorAll('.tab').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-tab') === name); });
+    var logs = name === 'logs';
+    document.getElementById('tickets-view').hidden = logs;
+    document.getElementById('logs-view').hidden = !(logs && logsLoaded);
+    document.getElementById('log-unlock').hidden = !(logs && !logsLoaded);
+    if (logs && !logsLoaded) document.getElementById('log-pw').focus();
+  }
+  document.querySelectorAll('.tab').forEach(function (tab) {
+    tab.addEventListener('click', function () { showTab(tab.getAttribute('data-tab')); });
+  });
+  document.getElementById('log-unlock').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var err = document.getElementById('log-err'), pw = document.getElementById('log-pw');
+    err.hidden = true;
+    fetch(BASE + '/activity', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw.value }) })
+      .then(function (res) { return res.json(); })
+      .then(function (d) {
+        if (!d || !d.ok) { err.hidden = false; pw.select(); return; }
+        pw.value = ''; logsLoaded = true; setupActivity(d); showTab('logs');
+      })
+      .catch(function () { err.textContent = 'Could not load the activity log. Try again.'; err.hidden = false; });
+  });
 
-  function setupActivity(node) {
-    var act = { events: [], calls: [] };
-    try { act = JSON.parse(decodeURIComponent(escape(atob(node.textContent.trim())))); } catch (e) {}
+  function setupActivity(act) {
+    act = act || { events: [], calls: [] };
     var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     var TYPES = {
       call: { ic: 'ic-call', sym: '☎' }, ticket_created: { ic: 'ic-ticket', sym: '✓' },
@@ -248,16 +281,7 @@ footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; tex
     document.getElementById('p-prev').addEventListener('click', function () { cur = shift(start(cur), -1); draw(); });
     document.getElementById('p-next').addEventListener('click', function () { cur = shift(start(cur), 1); draw(); });
     document.getElementById('p-today').addEventListener('click', function () { cur = new Date(); draw(); });
-    document.querySelectorAll('.tab').forEach(function (tab) {
-      tab.addEventListener('click', function () {
-        document.querySelectorAll('.tab').forEach(function (x) { x.classList.remove('on'); });
-        tab.classList.add('on');
-        var logs = tab.getAttribute('data-tab') === 'logs';
-        document.getElementById('logs-view').hidden = !logs;
-        document.getElementById('tickets-view').hidden = logs;
-        if (logs) draw();
-      });
-    });
+    draw();
   }
   var rows = [];
   try { rows = JSON.parse(decodeURIComponent(escape(atob(document.getElementById('__data').textContent.trim())))); } catch (e) { rows = []; }

@@ -72,7 +72,8 @@ See a full example in [docs/sample-call.md](docs/sample-call.md).
 │   └── tools/
 │       └── log-maintenance-request.json  # ElevenLabs webhook tool the agent calls
 ├── dashboard/
-│   └── dashboard.html                    # Dashboard page served by the n8n Dashboard workflow
+│   ├── dashboard.html                    # Dashboard page (staff + admin views) served by n8n
+│   └── login.html                        # Password login page
 └── docs/
     └── sample-call.md                    # Example conversation + what happens behind the scenes
 ```
@@ -84,9 +85,16 @@ Both workflows run on the Growlyze n8n instance.
 | Workflow | What it does |
 |---|---|
 | **Growlyze Maintenance Agent - Call Intake** | `POST /webhook/growlyze-maintenance-intake`. Checks the `x-growlyze-key` header, builds the ticket, saves it to the `growlyze_maintenance_requests` Data Table, replies to the agent with the ticket number, and emails the on-call technician for emergencies. |
-| **Growlyze Maintenance Agent - Dashboard** | `GET /webhook/growlyze-maintenance/dashboard?key=...` serves the dashboard. `POST /webhook/growlyze-maintenance/update-status?key=...` saves status changes. |
+| **Growlyze Maintenance Agent - Dashboard** | `GET /webhook/growlyze-maintenance/dashboard` shows the login page, then the dashboard. `POST .../login` checks the password, `GET .../logout` signs out, and `POST .../update-status` saves status changes for logged-in users. |
 
-The intake key and the dashboard key are secrets kept in n8n and ElevenLabs only. Never commit them to this repo.
+### Dashboard access
+
+The dashboard has two passwords:
+
+- **Staff:** sees all tickets and can change their status.
+- **Admin:** also sees the admin section, with links to every n8n automation, the n8n run logs, the tickets data table, the ElevenLabs agent and its call history, and a link to each ticket's call recording and transcript.
+
+A login lasts 12 hours. The intake key, the passwords and the session tokens are secrets kept in n8n and ElevenLabs only. Never commit them to this repo. To change a password, edit the **Check Password** node in the Dashboard workflow and publish it.
 
 ## Setup for a new client
 

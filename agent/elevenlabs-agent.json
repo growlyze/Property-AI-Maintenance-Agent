@@ -1,24 +1,29 @@
 {
-  "name": "Growlyze Maintenance Intake",
+  "name": "Growlyze Maintenance Intake - Demo AI",
   "conversation_config": {
     "agent": {
-      "first_message": "Thanks for calling the maintenance line. This is Emma. Is anyone in danger, or is there fire, gas or flooding right now?",
+      "first_message": "Thanks for calling the {{COMPANY_NAME}} maintenance line. This is Emma. Is anyone in danger, or is there fire, gas or flooding right now?",
       "language": "en",
       "prompt": {
-        "prompt": "<paste agent/system-prompt.md here, with {{COMPANY_NAME}} replaced>",
-        "llm": "<chosen LLM, e.g. a Claude or GPT model offered by ElevenLabs>",
+        "prompt": "<agent/system-prompt.md from '## Identity' down, with {{COMPANY_NAME}} replaced>",
+        "llm": "claude-haiku-5-5",
         "temperature": 0.3,
-        "tool_ids": ["<id of log_maintenance_request tool>"]
+        "tool_ids": ["<id of log_maintenance_request tool>"],
+        "built_in_tools": {
+          "end_call": {
+            "name": "end_call",
+            "description": "End the call after the closing line, once the tenant has nothing else to add.",
+            "params": { "system_tool_type": "end_call" }
+          }
+        }
       }
     },
     "tts": {
-      "voice_id": "<ElevenLabs voice id>"
+      "voice_id": "EXAVITQu4vr4xnSDxMaL",
+      "_voice_name": "Sarah - Mature, Reassuring, Confident"
     },
     "conversation": {
       "max_duration_seconds": 600
-    },
-    "turn": {
-      "turn_timeout": 30
     }
   }
 }

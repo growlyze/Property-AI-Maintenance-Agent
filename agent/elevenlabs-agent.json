@@ -1,0 +1,24 @@
+{
+  "name": "Growlyze Maintenance Intake",
+  "conversation_config": {
+    "agent": {
+      "first_message": "Thanks for calling the maintenance line. This is Emma. Is anyone in danger, or is there fire, gas or flooding right now?",
+      "language": "en",
+      "prompt": {
+        "prompt": "<paste agent/system-prompt.md here, with {{COMPANY_NAME}} replaced>",
+        "llm": "<chosen LLM, e.g. a Claude or GPT model offered by ElevenLabs>",
+        "temperature": 0.3,
+        "tool_ids": ["<id of log_maintenance_request tool>"]
+      }
+    },
+    "tts": {
+      "voice_id": "<ElevenLabs voice id>"
+    },
+    "conversation": {
+      "max_duration_seconds": 600
+    },
+    "turn": {
+      "turn_timeout": 30
+    }
+  }
+}

@@ -2,9 +2,9 @@
 
 **By Growlyze: AI automation for property managers.**
 
-A 24/7 voice agent that answers tenant maintenance calls, collects every detail a technician needs, sorts each request by urgency, logs it automatically, and texts the on-call tech the moment there's an emergency.
+A 24/7 AI voice agent that answers tenant maintenance calls, collects every detail a technician needs, sorts each request by urgency, logs a ticket, and alerts the on-call technician the moment there's an emergency. Property managers follow every request on a live dashboard.
 
-**Built with:** Vapi · OpenAI GPT-4.1 · n8n · Google Sheets · Twilio
+**Built with:** ElevenLabs Agents · n8n · n8n Data Tables · Gmail
 
 ---
 
@@ -25,23 +25,24 @@ Property managers lose time and money on maintenance calls:
 | 🚨 **Puts safety first** | Fire, gas and flooding get safety instructions before any questions |
 | 📝 **Collects complete details** | Name, callback number, address, unit, issue, access permission, pets, preferred time |
 | 🔺 **Sorts by urgency** | `emergency` / `urgent` / `routine`, with clear rules and the higher level picked when unsure |
-| 🗂️ **Logs it automatically** | Every request becomes a ticket row in Google Sheets, swappable for any CRM or PM software |
-| 📲 **Alerts on-call staff instantly** | Emergencies trigger an SMS with everything the technician needs |
+| 🗂️ **Logs it automatically** | Every request becomes a ticket in an n8n Data Table |
+| 📧 **Alerts on-call staff instantly** | Emergencies trigger an email with everything the technician needs |
 | 🎫 **Confirms with a ticket number** | The tenant hangs up knowing exactly what happens next |
+| 📊 **Live dashboard** | Open requests, urgency counts, search, filters and one-click status updates |
 
 ## How it works
 
 ```mermaid
 flowchart LR
-    T([Tenant calls]) --> V[Vapi voice agent<br/>GPT-4.1 + Emma voice]
-    V -->|log_maintenance_request| W[n8n webhook]
-    W --> P[Parse request<br/>+ create ticket ID]
-    P --> S[(Google Sheet<br/>Requests)]
-    S --> R[Reply to Vapi<br/>with ticket number]
-    S --> E{Emergency?}
-    E -->|yes| SMS[Twilio SMS<br/>to on-call technician]
+    T([Tenant calls]) --> V[ElevenLabs voice agent]
+    V -->|log_maintenance_request| W[n8n: Call Intake workflow]
+    W --> D[(Data Table<br/>maintenance requests)]
+    D --> R[Reply with<br/>ticket number]
+    D --> E{Emergency?}
+    E -->|yes| M[Email to<br/>on-call technician]
     R --> V
     V -->|reads ticket number| T
+    D --> DB[n8n: Dashboard workflow<br/>web page for the team]
 ```
 
 ### Call flow
@@ -49,7 +50,7 @@ flowchart LR
 1. **Safety check:** the first message asks about fire, gas or flooding, so real emergencies get handled in the first seconds.
 2. **Intake:** the agent asks one question at a time and skips anything the tenant already said.
 3. **Triage:** it classifies the issue (plumbing, electrical, HVAC, appliance, pest, lockout/security, structural, other) and its urgency.
-4. **Log:** it calls the `log_maintenance_request` tool, and n8n writes the ticket and returns a ticket number.
+4. **Log:** it calls the `log_maintenance_request` tool. n8n saves the ticket and returns a ticket number such as `MR-4K9ZQ`.
 5. **Close:** it reads back the ticket number and the expected response time for that urgency level.
 
 See a full example in [docs/sample-call.md](docs/sample-call.md).
@@ -66,39 +67,42 @@ See a full example in [docs/sample-call.md](docs/sample-call.md).
 
 ```
 ├── agent/
-│   ├── system-prompt.md               # Full agent instructions: persona, safety, intake, triage, rules
-│   ├── assistant.json                 # Vapi assistant config (model, voice, transcriber)
+│   ├── system-prompt.md                  # Agent instructions: persona, safety, intake, triage, rules
+│   ├── elevenlabs-agent.json             # ElevenLabs agent settings (first message, voice, LLM)
 │   └── tools/
-│       └── log-maintenance-request.json  # Function-tool schema the agent calls
-├── n8n/
-│   └── maintenance-intake-workflow.json  # Importable n8n workflow
+│       └── log-maintenance-request.json  # ElevenLabs webhook tool the agent calls
+├── dashboard/
+│   └── dashboard.html                    # Dashboard page served by the n8n Dashboard workflow
 └── docs/
-    ├── sample-call.md                 # Example conversation + what happens behind the scenes
-    └── google-sheet-template.csv      # Column headers for the Requests sheet
+    └── sample-call.md                    # Example conversation + what happens behind the scenes
 ```
 
-## Setup
+## n8n workflows
 
-**You'll need:** a Vapi account, an n8n instance (cloud or self-hosted), a Google account, and a Twilio number for SMS alerts.
+Both workflows run on the Growlyze n8n instance.
 
-1. **Google Sheet:** create a sheet with a tab named `Requests`, and paste the headers from `docs/google-sheet-template.csv` into row 1.
-2. **n8n:**
-   - Import `n8n/maintenance-intake-workflow.json`.
-   - In **Log to Google Sheet**, connect your Google credentials and set your sheet ID.
-   - In **SMS on-call technician**, connect Twilio and set the `from` and `to` numbers.
-   - Activate the workflow and copy the production webhook URL.
-3. **Vapi tool:** create a function tool from `agent/tools/log-maintenance-request.json`, and set its server URL to your n8n webhook.
-4. **Vapi assistant:** create an assistant using `agent/assistant.json`. Paste `agent/system-prompt.md` into the system prompt, replace `{{COMPANY_NAME}}`, and attach the tool.
-5. **Phone number:** buy or import a number in Vapi, assign the assistant, and point the property manager's after-hours line to it.
-6. **Test:** call it with a routine request and an emergency. Check that the sheet row appears and the SMS arrives.
+| Workflow | What it does |
+|---|---|
+| **Growlyze Maintenance Agent - Call Intake** | `POST /webhook/growlyze-maintenance-intake`. Checks the `x-growlyze-key` header, builds the ticket, saves it to the `growlyze_maintenance_requests` Data Table, replies to the agent with the ticket number, and emails the on-call technician for emergencies. |
+| **Growlyze Maintenance Agent - Dashboard** | `GET /webhook/growlyze-maintenance/dashboard?key=...` serves the dashboard. `POST /webhook/growlyze-maintenance/update-status?key=...` saves status changes. |
+
+The intake key and the dashboard key are secrets kept in n8n and ElevenLabs only. Never commit them to this repo.
+
+## Setup for a new client
+
+1. **n8n:** in the Call Intake workflow, connect the Gmail account and set the on-call technician's email in **Email On-call Technician**.
+2. **ElevenLabs tool:** create a webhook tool from `agent/tools/log-maintenance-request.json`. Set the URL to your n8n host and the `x-growlyze-key` header to the intake key.
+3. **ElevenLabs agent:** create an agent with the settings in `agent/elevenlabs-agent.json`. Paste `agent/system-prompt.md` into the system prompt, replace `{{COMPANY_NAME}}`, and attach the tool.
+4. **Phone number:** import a Twilio number into ElevenLabs, assign the agent, and point the property manager's after-hours line to it.
+5. **Test:** call it with a routine request and an emergency. Check that the ticket appears on the dashboard and the emergency email arrives.
 
 ## Customizing for a client
 
-- **Branding:** company name, agent name and voice.
+- **Branding:** company name, agent name and voice. Tenants hear the client's company name, not Growlyze.
 - **Response times:** match the promises in the urgency table to the client's real SLAs.
-- **Where tickets go:** swap Google Sheets for AppFolio, Buildium, Airtable, HubSpot or email. Only the n8n logging node changes.
-- **Escalation:** add a phone call (not just SMS) or a backup technician if the first doesn't acknowledge.
-- **Languages:** the stack supports multilingual voices and transcription for non-English tenants.
+- **Where tickets go:** add AppFolio, Buildium, Airtable, HubSpot or Google Sheets alongside the Data Table. Only the n8n intake workflow changes.
+- **Escalation:** add SMS or a phone call, or a backup technician if the first doesn't acknowledge.
+- **Languages:** ElevenLabs supports multilingual voices for non-English tenants.
 
 ## About Growlyze
 

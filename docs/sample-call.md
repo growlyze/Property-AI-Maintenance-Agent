@@ -38,7 +38,7 @@ An illustrative example of how the agent handles an after-hours emergency.
 
 *Agent calls `log_maintenance_request` → urgency `emergency`, category `plumbing`*
 
-**Agent:** You're all set. Your ticket number is M-R, 4-K-9-Z. Because this is an emergency, I've alerted the on-call technician, and you'll get a call back within 30 minutes. Is there anything else about this repair?
+**Agent:** You're all set. Your ticket number is M-R, 4-K-9-Z-Q. Because this is an emergency, I've alerted the on-call technician, and you'll get a call back within 30 minutes. Is there anything else about this repair?
 
 **Tenant:** No, thank you.
 
@@ -48,7 +48,7 @@ An illustrative example of how the agent handles an after-hours emergency.
 
 ## What happened behind the scenes
 
-1. Vapi sent the tool call to the n8n webhook.
-2. n8n created ticket `MR-4K9Z…` and added a row to the **Requests** sheet.
-3. Because urgency = `emergency`, n8n texted the on-call technician the address, issue and tenant's callback number.
-4. n8n returned the ticket number to Vapi, and the agent read it back to the tenant.
+1. ElevenLabs sent the tool call to the n8n intake webhook.
+2. n8n created ticket `MR-4K9ZQ` and saved it to the maintenance requests Data Table, where it appears on the dashboard.
+3. Because urgency = `emergency`, n8n emailed the on-call technician the address, issue and tenant's callback number.
+4. n8n returned the ticket number to the agent, and the agent read it back to the tenant.

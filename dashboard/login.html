@@ -33,5 +33,6 @@ button:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--oran
     <input id="password" name="password" type="password" autocomplete="current-password" required autofocus>
     <button type="submit">Log in</button>
   </form>
+  <script>if (location.hash) document.forms[0].action = 'login' + location.hash;</script>
 </body>
 </html>

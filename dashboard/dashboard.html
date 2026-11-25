@@ -265,6 +265,7 @@ footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; tex
   document.querySelectorAll('.tab').forEach(function (tab) {
     tab.addEventListener('click', function () { showTab(tab.getAttribute('data-tab')); });
   });
+  if (location.hash === '#logs') setTimeout(function () { showTab('logs'); }, 0);
   document.getElementById('log-unlock').addEventListener('submit', function (ev) {
     ev.preventDefault();
     var err = document.getElementById('log-err'), pw = document.getElementById('log-pw');

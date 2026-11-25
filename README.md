@@ -72,8 +72,9 @@ See a full example in [docs/sample-call.md](docs/sample-call.md).
 │   └── tools/
 │       └── log-maintenance-request.json  # ElevenLabs webhook tool the agent calls
 ├── dashboard/
-│   ├── dashboard.html                    # Dashboard page (staff + admin views) served by n8n
-│   └── login.html                        # Password login page
+│   ├── dashboard.html                    # Admin dashboard page (tickets) served by n8n
+│   ├── logs.html                         # Activity log page served by n8n
+│   └── login.html                        # Login page template used by both pages
 └── docs/
     └── sample-call.md                    # Example conversation + what happens behind the scenes
 ```
@@ -85,14 +86,14 @@ Both workflows run on the Growlyze n8n instance.
 | Workflow | What it does |
 |---|---|
 | **Growlyze Maintenance Agent - Call Intake** | `POST /webhook/growlyze-maintenance-intake`. Checks the `x-growlyze-key` header, builds the ticket, saves it to the `growlyze_maintenance_requests` Data Table, replies to the agent with the ticket number, and emails the on-call technician for emergencies. |
-| **Growlyze Maintenance Agent - Dashboard** | `GET /webhook/growlyze-maintenance/dashboard` shows the login page, then the dashboard. `POST .../login` checks the password, `GET .../logout` signs out, and `POST .../update-status` saves status changes for logged-in users. |
+| **Growlyze Maintenance Agent - Dashboard** | Serves both pages. `GET /webhook/growlyze-maintenance/dashboard` (with `POST .../login`, `GET .../logout`, `POST .../update-status`, `POST .../change-password`) and `GET /webhook/growlyze-maintenance/logs` (with `POST .../logs-login`, `GET .../logs-logout`). |
 
-### Dashboard access
+### The two pages
 
-The dashboard has two passwords:
+Each page has its own link and its own password:
 
-- **Dashboard login:** opens the tickets, where staff can change each ticket's status.
-- **Activity log:** opens only with its own activity log password (checked in n8n before any log data is sent). It shows one timeline of every call received (from ElevenLabs call history), ticket created, emergency email sent or not sent, and status change. It can be viewed by day, month or year, with totals for the period and a recording link for each call.
+- **Admin dashboard** (`/webhook/growlyze-maintenance/dashboard`): the tickets, where staff can change each ticket's status. It has an **Activity log** button and a **Change password** option.
+- **Activity log** (`/webhook/growlyze-maintenance/logs`): a separate page with its own login. It shows one timeline of every call received (from ElevenLabs call history), ticket created, emergency email sent or not sent, and status change. It can be viewed by day, month or year, with totals for the period and a recording link for each call.
 
 Tickets created, email results and status changes are stored in the `growlyze_activity_log` Data Table. Calls are read live from ElevenLabs using the `ElevenLabs API (Growlyze)` credential in n8n.
 

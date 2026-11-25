@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Activity Log</title>
+<link href="https://fonts.bunny.net/css?family=switzer:400,500,600,700,800" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; word-break: break-word; overflow-wrap: break-word; }
+:root {
+  --cream: #f5f0e6; --dark: #140827; --orange: #f55809;
+  --purple: #9a57ff; --purple-lt: #b78aff; --blue: #397ae7; --blue-lt: #75a8ff;
+  --green: #0db664; --green-lt: #86dbb2; --yellow: #ffb900;
+}
+body { font-family: 'Switzer', system-ui, -apple-system, sans-serif; background: var(--cream); color: var(--dark); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+.card { background: var(--cream); border: 2px solid var(--dark); border-radius: 10px; box-shadow: 4px 4px 0 var(--dark); }
+header.card { padding: 1.5rem 1.75rem; margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; box-shadow: 5px 5px 0 var(--dark); }
+.badge { display: inline-block; background: var(--orange); color: #fff; font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: .3rem .8rem; border-radius: 10px; margin-bottom: .6rem; }
+h1 { font-size: 1.8rem; font-weight: 800; line-height: 1.2; }
+.sub { font-size: .9rem; opacity: .65; font-weight: 500; margin-top: .25rem; }
+.btn { font: inherit; font-weight: 700; font-size: .85rem; background: var(--dark); color: var(--cream); border: 2px solid var(--dark); border-radius: 10px; padding: .55rem 1rem; cursor: pointer; box-shadow: 3px 3px 0 var(--orange); }
+.btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--orange); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
+.stat { padding: 1.25rem; min-width: 0; }
+.stat .num { font-size: 2rem; font-weight: 800; line-height: 1; }
+.stat .lbl { font-size: .8rem; font-weight: 600; opacity: .7; margin-top: .4rem; text-transform: uppercase; letter-spacing: .05em; }
+.filters { display: flex; flex-wrap: wrap; gap: .75rem; margin-bottom: 1.25rem; }
+.filters input, .filters select { font: inherit; font-size: .9rem; font-weight: 500; color: var(--dark); background: #fff; border: 2px solid var(--dark); border-radius: 10px; padding: .55rem .8rem; min-width: 0; }
+.filters input { flex: 1 1 240px; }
+.tbl-wrap { overflow-x: auto; padding: 0; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: .88rem; min-width: 820px; }
+th { background: var(--dark); color: var(--cream); text-align: left; font-size: .75rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: .8rem .9rem; }
+td { padding: .85rem .9rem; vertical-align: top; border-top: 1.5px solid var(--dark); }
+tbody tr.row { cursor: pointer; }
+tbody tr.row:nth-child(4n+3) { background: rgba(20, 8, 39, .04); }
+tbody tr.row:hover { background: rgba(245, 88, 9, .08); }
+.tag { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: .22rem .55rem; border-radius: 6px; border: 2px solid var(--dark); white-space: nowrap; }
+.u-emergency { background: var(--orange); color: #fff; }
+.u-urgent { background: var(--yellow); }
+.u-routine { background: var(--green-lt); }
+.tid { font-weight: 800; }
+.muted { opacity: .65; font-size: .8rem; }
+select.status { font: inherit; font-size: .8rem; font-weight: 700; border: 2px solid var(--dark); border-radius: 6px; padding: .25rem .4rem; background: #fff; color: var(--dark); max-width: 100%; }
+tr.detail td { background: #fff; border-top: none; }
+.dgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .9rem 1.5rem; padding: .25rem 0; }
+.dgrid div { min-width: 0; }
+.dgrid b { display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; opacity: .6; margin-bottom: .15rem; }
+.empty { padding: 3rem 1rem; text-align: center; font-weight: 600; opacity: .7; }
+.toast { position: fixed; right: 1rem; bottom: 1rem; background: var(--dark); color: var(--cream); padding: .7rem 1rem; border-radius: 10px; font-weight: 600; font-size: .85rem; box-shadow: 3px 3px 0 var(--orange); opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.on { opacity: 1; }
+.actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
+.btn-light { background: var(--cream); color: var(--dark); box-shadow: 3px 3px 0 var(--dark); text-decoration: none; }
+.role { font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; border: 2px solid var(--dark); border-radius: 6px; padding: .3rem .6rem; }
+.role.admin { background: var(--purple-lt); }
+.role.staff { background: var(--green-lt); }
+.tabs { display: flex; gap: .6rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.tab, .seg button, .pnav button { font: inherit; font-weight: 700; font-size: .9rem; color: var(--dark); background: var(--cream); border: 2px solid var(--dark); border-radius: 10px; padding: .55rem 1.1rem; cursor: pointer; box-shadow: 3px 3px 0 var(--dark); }
+.tab.on, .seg button.on { background: var(--dark); color: var(--cream); box-shadow: 3px 3px 0 var(--orange); }
+.logbar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; margin-bottom: 1.5rem; }
+.seg, .pnav { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.pnav strong { min-width: 9rem; text-align: center; font-size: 1rem; }
+.pnav button { padding: .45rem .8rem; }
+.timeline { padding: .5rem 1.25rem 1.25rem; }
+.tl-group { font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; opacity: .6; margin: 1.1rem 0 .5rem; }
+.ev { display: grid; grid-template-columns: 70px 34px 1fr; gap: .75rem; align-items: start; padding: .7rem 0; border-top: 1.5px solid rgba(20, 8, 39, .12); }
+.ev .t { font-size: .82rem; font-weight: 700; opacity: .7; padding-top: .3rem; }
+.ev .ic { width: 34px; height: 34px; border: 2px solid var(--dark); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+.ev .tx { min-width: 0; }
+.ev .tx b { display: block; font-size: .92rem; }
+.ev .tx span { display: block; font-size: .84rem; opacity: .75; margin-top: .1rem; }
+.ic-call { background: var(--blue-lt); } .ic-ticket { background: var(--green-lt); } .ic-email { background: var(--yellow); } .ic-fail { background: var(--orange); } .ic-status { background: var(--purple-lt); }
+.unlock { padding: 1.5rem; margin-bottom: 2rem; max-width: 560px; }
+.unlock h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: .3rem; }
+.unlock .sub { margin-bottom: 1rem; }
+.unlock-row { display: flex; gap: .6rem; flex-wrap: wrap; }
+.unlock-row input { flex: 1 1 220px; min-width: 0; font: inherit; font-size: .95rem; color: var(--dark); background: #fff; border: 2px solid var(--dark); border-radius: 10px; padding: .6rem .8rem; }
+.unlock-err { margin-top: .8rem; font-weight: 700; color: var(--orange); }
+.pw-card { max-width: 720px; }
+.pw-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .9rem 1rem; margin-bottom: 1.1rem; }
+.pw-grid label { display: block; min-width: 0; font-size: .75rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.pw-grid input, .pw-grid select { display: block; width: 100%; margin-top: .35rem; font: inherit; font-size: .95rem; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--dark); background: #fff; border: 2px solid var(--dark); border-radius: 10px; padding: .6rem .8rem; }
+.ic-pw { background: var(--cream); }
+.calllink { color: var(--blue); font-weight: 700; }
+footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; text-align: center; }
+@media (max-width: 600px) { h1 { font-size: 1.4rem; } .stat .num { font-size: 1.6rem; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="card">
+    <div>
+      <span class="badge">AI Maintenance Agent</span>
+      <h1>Activity Log</h1>
+      <p class="sub">Calls received, tickets created, emails and status changes</p>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="location.reload()">Refresh</button>
+      <a class="btn btn-light" id="to-dash" href="#">Open dashboard</a>
+      <a class="btn btn-light" id="logout" href="#">Log out</a>
+    </div>
+  </header>
+
+    <div class="card logbar">
+      <div class="seg">
+        <button data-p="day" class="on">Day</button>
+        <button data-p="month">Month</button>
+        <button data-p="year">Year</button>
+      </div>
+      <div class="pnav">
+        <button id="p-prev" aria-label="Previous">&#8249;</button>
+        <strong id="p-label"></strong>
+        <button id="p-next" aria-label="Next">&#8250;</button>
+        <button id="p-today">Today</button>
+      </div>
+    </div>
+    <section class="stats">
+      <div class="card stat"><div class="num" id="l-calls" style="color:var(--blue)">0</div><div class="lbl">Calls received</div></div>
+      <div class="card stat"><div class="num" id="l-tickets" style="color:var(--green)">0</div><div class="lbl">Tickets created</div></div>
+      <div class="card stat"><div class="num" id="l-emails">0</div><div class="lbl">Emails sent</div></div>
+      <div class="card stat"><div class="num" id="l-fails" style="color:var(--orange)">0</div><div class="lbl">Emails not sent</div></div>
+      <div class="card stat"><div class="num" id="l-status" style="color:var(--purple)">0</div><div class="lbl">Status changes</div></div>
+    </section>
+    <div class="card timeline" id="timeline"></div>
+
+  <footer>Calls come from the voice agent's call history. Everything else is recorded by the n8n automations.</footer>
+</div>
+
+<script id="__activity" type="application/json">__ACTIVITY__</script>
+<script>
+(function () {
+  var BASE = location.pathname.replace(/\/logs\/?$/, '');
+  document.getElementById('to-dash').href = BASE + '/dashboard';
+  document.getElementById('logout').href = BASE + '/logs-logout';
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    if (attrs) for (var k in attrs) { if (k === 'text') n.textContent = attrs[k]; else n.setAttribute(k, attrs[k]); }
+    (kids || []).forEach(function (c) { if (c) n.appendChild(c); });
+    return n;
+  }
+  function setupActivity(act) {
+    act = act || { events: [], calls: [] };
+    var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    var TYPES = {
+      call: { ic: 'ic-call', sym: '☎' }, ticket_created: { ic: 'ic-ticket', sym: '✓' },
+      email_sent: { ic: 'ic-email', sym: '✉' }, email_failed: { ic: 'ic-fail', sym: '!' }, status_changed: { ic: 'ic-status', sym: '↻' }, password_changed: { ic: 'ic-pw', sym: '✱' }
+    };
+    var evs = [];
+    (act.calls || []).forEach(function (c) {
+      var d = Number(c.call_duration_secs) || 0;
+      var dur = Math.floor(d / 60) + 'm ' + (d % 60) + 's';
+      var res = c.call_successful === 'failure' ? 'call did not succeed' : (c.call_successful === 'success' ? 'handled' : (c.status || ''));
+      evs.push({ at: new Date(Number(c.start_time_unix_secs) * 1000), type: 'call', title: 'Call received',
+        text: [dur, res, c.call_summary_title || c.transcript_summary || ''].filter(Boolean).join(' · '), conv: c.conversation_id });
+    });
+    (act.events || []).forEach(function (e) {
+      var titles = { ticket_created: 'Ticket created, agent replied', email_sent: 'Emergency email sent', email_failed: 'Emergency email NOT sent', status_changed: 'Status changed', password_changed: 'Password changed' };
+      evs.push({ at: new Date(e.event_at || e.createdAt), type: e.event_type, title: (titles[e.event_type] || e.event_type) + (e.ticket_id ? ' · ' + e.ticket_id : ''), text: e.summary || '' });
+    });
+    evs = evs.filter(function (e) { return !isNaN(e.at); }).sort(function (a, b) { return b.at - a.at; });
+
+    var period = 'day', cur = new Date();
+    function start(d) { return period === 'day' ? new Date(d.getFullYear(), d.getMonth(), d.getDate()) : period === 'month' ? new Date(d.getFullYear(), d.getMonth(), 1) : new Date(d.getFullYear(), 0, 1); }
+    function shift(d, n) { return period === 'day' ? new Date(d.getFullYear(), d.getMonth(), d.getDate() + n) : period === 'month' ? new Date(d.getFullYear(), d.getMonth() + n, 1) : new Date(d.getFullYear() + n, 0, 1); }
+    function label(d) { return period === 'day' ? d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : period === 'month' ? MONTHS[d.getMonth()] + ' ' + d.getFullYear() : String(d.getFullYear()); }
+    function groupKey(d) { return period === 'year' ? MONTHS[d.getMonth()] : d.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' }); }
+
+    function draw() {
+      var a = start(cur), b = shift(a, 1);
+      document.getElementById('p-label').textContent = label(a);
+      var list = evs.filter(function (e) { return e.at >= a && e.at < b; });
+      var cnt = function (t) { return list.filter(function (e) { return e.type === t; }).length; };
+      document.getElementById('l-calls').textContent = cnt('call');
+      document.getElementById('l-tickets').textContent = cnt('ticket_created');
+      document.getElementById('l-emails').textContent = cnt('email_sent');
+      document.getElementById('l-fails').textContent = cnt('email_failed');
+      document.getElementById('l-status').textContent = cnt('status_changed');
+      var box = document.getElementById('timeline'); box.textContent = '';
+      if (act.calls_error) box.appendChild(el('div', { 'class': 'tl-group', text: 'Call history unavailable right now: ' + act.calls_error }));
+      if (!list.length) { box.appendChild(el('div', { 'class': 'empty', text: 'No activity in this period.' })); return; }
+      var lastKey = null;
+      list.forEach(function (e) {
+        var k = period === 'day' ? null : groupKey(e.at);
+        if (k && k !== lastKey) { box.appendChild(el('div', { 'class': 'tl-group', text: k })); lastKey = k; }
+        var t = TYPES[e.type] || { ic: 'ic-status', sym: '•' };
+        var tx = el('div', { 'class': 'tx' }, [el('b', { text: e.title }), e.text ? el('span', { text: e.text }) : null]);
+        if (e.conv && /^conv_/.test(e.conv)) tx.appendChild(el('a', { 'class': 'calllink', href: 'https://elevenlabs.io/app/agents/history/' + encodeURIComponent(e.conv), target: '_blank', rel: 'noopener', text: 'Recording & transcript' }));
+        var time = period === 'year' ? e.at.toLocaleDateString([], { day: 'numeric', month: 'short' }) : e.at.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        box.appendChild(el('div', { 'class': 'ev' }, [el('div', { 'class': 't', text: time }), el('div', { 'class': 'ic ' + t.ic, text: t.sym }), tx]));
+      });
+    }
+    document.querySelectorAll('.seg button').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.seg button').forEach(function (x) { x.classList.remove('on'); });
+        btn.classList.add('on'); period = btn.getAttribute('data-p'); draw();
+      });
+    });
+    document.getElementById('p-prev').addEventListener('click', function () { cur = shift(start(cur), -1); draw(); });
+    document.getElementById('p-next').addEventListener('click', function () { cur = shift(start(cur), 1); draw(); });
+    document.getElementById('p-today').addEventListener('click', function () { cur = new Date(); draw(); });
+    draw();
+  }
+  var act = { events: [], calls: [] };
+  try { act = JSON.parse(decodeURIComponent(escape(atob(document.getElementById('__activity').textContent.trim())))); } catch (e) {}
+  setupActivity(act);
+})();
+</script>
+</body>
+</html>

@@ -98,6 +98,7 @@ footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; tex
     <div class="actions">
       <span class="role" id="role"></span>
       <button class="btn" onclick="location.reload()">Refresh</button>
+      <a class="btn btn-light" id="to-logs" href="#" target="_blank" rel="noopener">Activity log</a>
       <button class="btn btn-light" id="pw-open" type="button">Change password</button>
       <a class="btn btn-light" id="logout" href="#">Log out</a>
     </div>
@@ -124,44 +125,6 @@ footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; tex
     <p class="unlock-err" id="pw-err" hidden></p>
   </form>
 
-  <nav class="tabs">
-    <button class="tab on" data-tab="tickets">Tickets</button>
-    <button class="tab" data-tab="logs">Activity log</button>
-  </nav>
-  <form class="card unlock" id="log-unlock" hidden>
-    <h2>Activity log is locked</h2>
-    <p class="sub">Enter the activity log password to see calls, tickets, emails and status changes.</p>
-    <div class="unlock-row">
-      <input id="log-pw" type="password" autocomplete="off" placeholder="Activity log password" required>
-      <button class="btn" type="submit">Unlock</button>
-    </div>
-    <p class="unlock-err" id="log-err" hidden>That password is not correct.</p>
-  </form>
-  <section id="logs-view" hidden>
-    <div class="card logbar">
-      <div class="seg">
-        <button data-p="day" class="on">Day</button>
-        <button data-p="month">Month</button>
-        <button data-p="year">Year</button>
-      </div>
-      <div class="pnav">
-        <button id="p-prev" aria-label="Previous">&#8249;</button>
-        <strong id="p-label"></strong>
-        <button id="p-next" aria-label="Next">&#8250;</button>
-        <button id="p-today">Today</button>
-      </div>
-    </div>
-    <section class="stats">
-      <div class="card stat"><div class="num" id="l-calls" style="color:var(--blue)">0</div><div class="lbl">Calls received</div></div>
-      <div class="card stat"><div class="num" id="l-tickets" style="color:var(--green)">0</div><div class="lbl">Tickets created</div></div>
-      <div class="card stat"><div class="num" id="l-emails">0</div><div class="lbl">Emails sent</div></div>
-      <div class="card stat"><div class="num" id="l-fails" style="color:var(--orange)">0</div><div class="lbl">Emails not sent</div></div>
-      <div class="card stat"><div class="num" id="l-status" style="color:var(--purple)">0</div><div class="lbl">Status changes</div></div>
-    </section>
-    <div class="card timeline" id="timeline"></div>
-  </section>
-
-  <div id="tickets-view">
   <section class="stats">
     <div class="card stat"><div class="num" id="s-total">0</div><div class="lbl">Total requests</div></div>
     <div class="card stat"><div class="num" id="s-open" style="color:var(--blue)">0</div><div class="lbl">Open</div></div>
@@ -205,7 +168,6 @@ footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; tex
     </table>
     <div class="empty" id="empty" hidden>No requests match these filters.</div>
   </div>
-  </div>
 
   <footer>Requests are logged automatically by the AI maintenance agent. Click a row for full details.</footer>
 </div>
@@ -220,6 +182,7 @@ footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; tex
   var BASE = location.pathname.replace(/\/dashboard\/?$/, '');
   var UPDATE_URL = BASE + '/update-status';
   document.getElementById('logout').href = BASE + '/logout';
+  document.getElementById('to-logs').href = BASE + '/logs';
   var roleEl = document.getElementById('role');
   roleEl.textContent = ROLE === 'admin' ? 'Admin' : 'Staff';
   roleEl.className = 'role ' + (ROLE === 'admin' ? 'admin' : 'staff');
@@ -253,94 +216,6 @@ footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; tex
       .catch(function () { btn.disabled = false; fail('Could not change the password. Try again.'); });
   });
 
-  var logsLoaded = false;
-  function showTab(name) {
-    document.querySelectorAll('.tab').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-tab') === name); });
-    var logs = name === 'logs';
-    document.getElementById('tickets-view').hidden = logs;
-    document.getElementById('logs-view').hidden = !(logs && logsLoaded);
-    document.getElementById('log-unlock').hidden = !(logs && !logsLoaded);
-    if (logs && !logsLoaded) document.getElementById('log-pw').focus();
-  }
-  document.querySelectorAll('.tab').forEach(function (tab) {
-    tab.addEventListener('click', function () { showTab(tab.getAttribute('data-tab')); });
-  });
-  if (location.hash === '#logs') setTimeout(function () { showTab('logs'); }, 0);
-  document.getElementById('log-unlock').addEventListener('submit', function (ev) {
-    ev.preventDefault();
-    var err = document.getElementById('log-err'), pw = document.getElementById('log-pw');
-    err.hidden = true;
-    fetch(BASE + '/activity', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw.value }) })
-      .then(function (res) { return res.json(); })
-      .then(function (d) {
-        if (!d || !d.ok) { err.hidden = false; pw.select(); return; }
-        pw.value = ''; logsLoaded = true; setupActivity(d); showTab('logs');
-      })
-      .catch(function () { err.textContent = 'Could not load the activity log. Try again.'; err.hidden = false; });
-  });
-
-  function setupActivity(act) {
-    act = act || { events: [], calls: [] };
-    var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    var TYPES = {
-      call: { ic: 'ic-call', sym: '☎' }, ticket_created: { ic: 'ic-ticket', sym: '✓' },
-      email_sent: { ic: 'ic-email', sym: '✉' }, email_failed: { ic: 'ic-fail', sym: '!' }, status_changed: { ic: 'ic-status', sym: '↻' }, password_changed: { ic: 'ic-pw', sym: '✱' }
-    };
-    var evs = [];
-    (act.calls || []).forEach(function (c) {
-      var d = Number(c.call_duration_secs) || 0;
-      var dur = Math.floor(d / 60) + 'm ' + (d % 60) + 's';
-      var res = c.call_successful === 'failure' ? 'call did not succeed' : (c.call_successful === 'success' ? 'handled' : (c.status || ''));
-      evs.push({ at: new Date(Number(c.start_time_unix_secs) * 1000), type: 'call', title: 'Call received',
-        text: [dur, res, c.call_summary_title || c.transcript_summary || ''].filter(Boolean).join(' · '), conv: c.conversation_id });
-    });
-    (act.events || []).forEach(function (e) {
-      var titles = { ticket_created: 'Ticket created, agent replied', email_sent: 'Emergency email sent', email_failed: 'Emergency email NOT sent', status_changed: 'Status changed', password_changed: 'Password changed' };
-      evs.push({ at: new Date(e.event_at || e.createdAt), type: e.event_type, title: (titles[e.event_type] || e.event_type) + (e.ticket_id ? ' · ' + e.ticket_id : ''), text: e.summary || '' });
-    });
-    evs = evs.filter(function (e) { return !isNaN(e.at); }).sort(function (a, b) { return b.at - a.at; });
-
-    var period = 'day', cur = new Date();
-    function start(d) { return period === 'day' ? new Date(d.getFullYear(), d.getMonth(), d.getDate()) : period === 'month' ? new Date(d.getFullYear(), d.getMonth(), 1) : new Date(d.getFullYear(), 0, 1); }
-    function shift(d, n) { return period === 'day' ? new Date(d.getFullYear(), d.getMonth(), d.getDate() + n) : period === 'month' ? new Date(d.getFullYear(), d.getMonth() + n, 1) : new Date(d.getFullYear() + n, 0, 1); }
-    function label(d) { return period === 'day' ? d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : period === 'month' ? MONTHS[d.getMonth()] + ' ' + d.getFullYear() : String(d.getFullYear()); }
-    function groupKey(d) { return period === 'year' ? MONTHS[d.getMonth()] : d.toLocaleDateString([], { weekday: 'long', day: 'numeric', month: 'long' }); }
-
-    function draw() {
-      var a = start(cur), b = shift(a, 1);
-      document.getElementById('p-label').textContent = label(a);
-      var list = evs.filter(function (e) { return e.at >= a && e.at < b; });
-      var cnt = function (t) { return list.filter(function (e) { return e.type === t; }).length; };
-      document.getElementById('l-calls').textContent = cnt('call');
-      document.getElementById('l-tickets').textContent = cnt('ticket_created');
-      document.getElementById('l-emails').textContent = cnt('email_sent');
-      document.getElementById('l-fails').textContent = cnt('email_failed');
-      document.getElementById('l-status').textContent = cnt('status_changed');
-      var box = document.getElementById('timeline'); box.textContent = '';
-      if (act.calls_error) box.appendChild(el('div', { 'class': 'tl-group', text: 'Call history unavailable right now: ' + act.calls_error }));
-      if (!list.length) { box.appendChild(el('div', { 'class': 'empty', text: 'No activity in this period.' })); return; }
-      var lastKey = null;
-      list.forEach(function (e) {
-        var k = period === 'day' ? null : groupKey(e.at);
-        if (k && k !== lastKey) { box.appendChild(el('div', { 'class': 'tl-group', text: k })); lastKey = k; }
-        var t = TYPES[e.type] || { ic: 'ic-status', sym: '•' };
-        var tx = el('div', { 'class': 'tx' }, [el('b', { text: e.title }), e.text ? el('span', { text: e.text }) : null]);
-        if (e.conv && /^conv_/.test(e.conv)) tx.appendChild(el('a', { 'class': 'calllink', href: 'https://elevenlabs.io/app/agents/history/' + encodeURIComponent(e.conv), target: '_blank', rel: 'noopener', text: 'Recording & transcript' }));
-        var time = period === 'year' ? e.at.toLocaleDateString([], { day: 'numeric', month: 'short' }) : e.at.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-        box.appendChild(el('div', { 'class': 'ev' }, [el('div', { 'class': 't', text: time }), el('div', { 'class': 'ic ' + t.ic, text: t.sym }), tx]));
-      });
-    }
-    document.querySelectorAll('.seg button').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        document.querySelectorAll('.seg button').forEach(function (x) { x.classList.remove('on'); });
-        btn.classList.add('on'); period = btn.getAttribute('data-p'); draw();
-      });
-    });
-    document.getElementById('p-prev').addEventListener('click', function () { cur = shift(start(cur), -1); draw(); });
-    document.getElementById('p-next').addEventListener('click', function () { cur = shift(start(cur), 1); draw(); });
-    document.getElementById('p-today').addEventListener('click', function () { cur = new Date(); draw(); });
-    draw();
-  }
   var rows = [];
   try { rows = JSON.parse(decodeURIComponent(escape(atob(document.getElementById('__data').textContent.trim())))); } catch (e) { rows = []; }
   rows.sort(function (a, b) { return new Date(b.received_at || b.createdAt) - new Date(a.received_at || a.createdAt); });

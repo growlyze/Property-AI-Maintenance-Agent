@@ -1,6 +1,6 @@
-# System Prompt: Growlyze Maintenance Intake Agent
+# System Prompt: Property Maintenance Intake Agent
 
-> Paste this into the ElevenLabs agent's system prompt. Replace the `{{...}}` placeholders per client. Tenants hear the client's company name, not Growlyze.
+> Paste this into the ElevenLabs agent's system prompt. Replace the `{{...}}` placeholders per client. Tenants hear the client's company name.
 
 ## Identity
 

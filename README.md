@@ -85,26 +85,26 @@ Both workflows run on the Growlyze n8n instance.
 
 | Workflow | What it does |
 |---|---|
-| **Growlyze Maintenance Agent - Call Intake** | `POST /webhook/growlyze-maintenance-intake`. Checks the `x-growlyze-key` header, builds the ticket, saves it to the `growlyze_maintenance_requests` Data Table, replies to the agent with the ticket number, and emails the on-call technician for emergencies. |
-| **Growlyze Maintenance Agent - Dashboard** | Serves both pages. `GET /webhook/growlyze-maintenance/dashboard` (with `POST .../login`, `GET .../logout`, `POST .../update-status`, `POST .../change-password`) and `GET /webhook/growlyze-maintenance/logs` (with `POST .../logs-login`, `GET .../logs-logout`). |
+| **Property Maintenance Agent - Call Intake** | `POST /webhook/property-maintenance-intake`. Checks the `x-intake-key` header, builds the ticket, saves it to the `property_maintenance_requests` Data Table, replies to the agent with the ticket number, and emails the on-call technician for emergencies. |
+| **Property Maintenance Agent - Dashboard** | Serves both pages. `GET /webhook/property-maintenance/dashboard` (with `POST .../login`, `GET .../logout`, `POST .../update-status`, `POST .../change-password`) and `GET /webhook/property-maintenance/logs` (with `POST .../logs-login`, `GET .../logs-logout`). |
 
 ### The two pages
 
 Each page has its own link and its own password:
 
-- **Admin dashboard** (`/webhook/growlyze-maintenance/dashboard`): the tickets, where staff can change each ticket's status. It has an **Activity log** button and a **Change password** option.
-- **Activity log** (`/webhook/growlyze-maintenance/logs`): a separate page with its own login. It shows one timeline of every call received (from ElevenLabs call history), ticket created, emergency email sent or not sent, and status change. It can be viewed by day, month or year, with totals for the period and a recording link for each call.
+- **Admin dashboard** (`/webhook/property-maintenance/dashboard`): the tickets, where staff can change each ticket's status. It has an **Activity log** button and a **Change password** option.
+- **Activity log** (`/webhook/property-maintenance/logs`): a separate page with its own login. It shows one timeline of every call received (from ElevenLabs call history), ticket created, emergency email sent or not sent, and status change. It can be viewed by day, month or year, with totals for the period and a recording link for each call.
 
-Tickets created, email results and status changes are stored in the `growlyze_activity_log` Data Table. Calls are read live from ElevenLabs using the `ElevenLabs API (Growlyze)` credential in n8n.
+Tickets created, email results and status changes are stored in the `property_activity_log` Data Table. Calls are read live from ElevenLabs using the `ElevenLabs API` credential in n8n.
 
 A login lasts 12 hours. The intake key, the passwords and the session tokens are secrets kept in n8n and ElevenLabs only. Never commit them to this repo.
 
-**Changing a password:** click **Change password** on the dashboard, choose *Dashboard login* or *Activity log*, and enter the current password and the new one (at least 8 characters). Passwords are stored only as salted SHA-256 hashes in the `growlyze_dashboard_settings` Data Table, and every change is recorded in the Activity log. People who are already logged in stay logged in until their 12-hour login ends.
+**Changing a password:** click **Change password** on the dashboard, choose *Dashboard login* or *Activity log*, and enter the current password and the new one (at least 8 characters). Passwords are stored only as salted SHA-256 hashes in the `property_dashboard_settings` Data Table, and every change is recorded in the Activity log. People who are already logged in stay logged in until their 12-hour login ends.
 
 ## Setup for a new client
 
 1. **n8n:** in the Call Intake workflow, connect the Gmail account and set the on-call technician's email in **Email On-call Technician**.
-2. **ElevenLabs tool:** create a webhook tool from `agent/tools/log-maintenance-request.json`. Set the URL to your n8n host and the `x-growlyze-key` header to the intake key.
+2. **ElevenLabs tool:** create a webhook tool from `agent/tools/log-maintenance-request.json`. Set the URL to your n8n host and the `x-intake-key` header to the intake key.
 3. **ElevenLabs agent:** create an agent with the settings in `agent/elevenlabs-agent.json`. Paste `agent/system-prompt.md` into the system prompt, replace `{{COMPANY_NAME}}`, and attach the tool.
 4. **Phone number:** import a Twilio number into ElevenLabs, assign the agent, and point the property manager's after-hours line to it.
 5. **Test:** call it with a routine request and an emergency. Check that the ticket appears on the dashboard and the emergency email arrives.

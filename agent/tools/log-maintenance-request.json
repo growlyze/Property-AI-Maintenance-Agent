@@ -4,10 +4,10 @@
   "description": "Log a tenant maintenance request once all details are collected. Returns a ticket number to read back to the caller.",
   "response_timeout_secs": 20,
   "api_schema": {
-    "url": "https://YOUR-N8N-HOST/webhook/growlyze-maintenance-intake",
+    "url": "https://YOUR-N8N-HOST/webhook/property-maintenance-intake",
     "method": "POST",
     "request_headers": {
-      "x-growlyze-key": "YOUR_INTAKE_KEY"
+      "x-intake-key": "YOUR_INTAKE_KEY"
     },
     "request_body_schema": {
       "type": "object",

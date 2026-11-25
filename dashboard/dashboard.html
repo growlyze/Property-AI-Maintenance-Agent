@@ -77,6 +77,11 @@ tr.detail td { background: #fff; border-top: none; }
 .unlock-row { display: flex; gap: .6rem; flex-wrap: wrap; }
 .unlock-row input { flex: 1 1 220px; min-width: 0; font: inherit; font-size: .95rem; color: var(--dark); background: #fff; border: 2px solid var(--dark); border-radius: 10px; padding: .6rem .8rem; }
 .unlock-err { margin-top: .8rem; font-weight: 700; color: var(--orange); }
+.pw-card { max-width: 720px; }
+.pw-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: .9rem 1rem; margin-bottom: 1.1rem; }
+.pw-grid label { display: block; min-width: 0; font-size: .75rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.pw-grid input, .pw-grid select { display: block; width: 100%; margin-top: .35rem; font: inherit; font-size: .95rem; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--dark); background: #fff; border: 2px solid var(--dark); border-radius: 10px; padding: .6rem .8rem; }
+.ic-pw { background: var(--cream); }
 .calllink { color: var(--blue); font-weight: 700; }
 footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; text-align: center; }
 @media (max-width: 600px) { h1 { font-size: 1.4rem; } .stat .num { font-size: 1.6rem; } }
@@ -93,9 +98,31 @@ footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; tex
     <div class="actions">
       <span class="role" id="role"></span>
       <button class="btn" onclick="location.reload()">Refresh</button>
+      <button class="btn btn-light" id="pw-open" type="button">Change password</button>
       <a class="btn btn-light" id="logout" href="#">Log out</a>
     </div>
   </header>
+
+  <form class="card unlock pw-card" id="pw-form" hidden>
+    <h2>Change password</h2>
+    <p class="sub">Choose which password to change. You need the current one. New passwords must be at least 8 characters.</p>
+    <div class="pw-grid">
+      <label>Password to change
+        <select id="pw-which">
+          <option value="login">Dashboard login</option>
+          <option value="log">Activity log</option>
+        </select>
+      </label>
+      <label>Current password<input id="pw-cur" type="password" autocomplete="current-password" required></label>
+      <label>New password<input id="pw-new" type="password" autocomplete="new-password" minlength="8" required></label>
+      <label>Repeat new password<input id="pw-rep" type="password" autocomplete="new-password" minlength="8" required></label>
+    </div>
+    <div class="unlock-row">
+      <button class="btn" type="submit" id="pw-save">Save new password</button>
+      <button class="btn btn-light" type="button" id="pw-cancel">Cancel</button>
+    </div>
+    <p class="unlock-err" id="pw-err" hidden></p>
+  </form>
 
   <nav class="tabs">
     <button class="tab on" data-tab="tickets">Tickets</button>
@@ -196,6 +223,36 @@ footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; tex
   var roleEl = document.getElementById('role');
   roleEl.textContent = ROLE === 'admin' ? 'Admin' : 'Staff';
   roleEl.className = 'role ' + (ROLE === 'admin' ? 'admin' : 'staff');
+  var pwForm = document.getElementById('pw-form');
+  function closePw() { pwForm.hidden = true; pwForm.reset(); document.getElementById('pw-err').hidden = true; }
+  document.getElementById('pw-open').addEventListener('click', function () {
+    pwForm.hidden = !pwForm.hidden;
+    if (!pwForm.hidden) document.getElementById('pw-cur').focus();
+  });
+  document.getElementById('pw-cancel').addEventListener('click', closePw);
+  pwForm.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var err = document.getElementById('pw-err'), btn = document.getElementById('pw-save');
+    var which = document.getElementById('pw-which').value, cur = document.getElementById('pw-cur').value;
+    var nw = document.getElementById('pw-new').value, rep = document.getElementById('pw-rep').value;
+    function fail(msg) { err.textContent = msg; err.hidden = false; }
+    err.hidden = true;
+    if (nw.length < 8) return fail('The new password must be at least 8 characters.');
+    if (nw !== rep) return fail('The two new passwords do not match.');
+    if (nw === cur) return fail('The new password must be different from the current one.');
+    btn.disabled = true;
+    fetch(BASE + '/change-password', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ which: which, current_password: cur, new_password: nw }) })
+      .then(function (res) { return res.json(); })
+      .then(function (d) {
+        btn.disabled = false;
+        if (d && d.ok) { closePw(); toast((which === 'log' ? 'Activity log' : 'Dashboard login') + ' password changed'); return; }
+        var msgs = { wrong_current: 'The current password is not correct.', too_short: 'The new password must be at least 8 characters.', not_logged_in: 'Your login has expired. Log in again.' };
+        fail(msgs[d && d.error] || 'Could not change the password. Try again.');
+      })
+      .catch(function () { btn.disabled = false; fail('Could not change the password. Try again.'); });
+  });
+
   var logsLoaded = false;
   function showTab(name) {
     document.querySelectorAll('.tab').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-tab') === name); });
@@ -226,7 +283,7 @@ footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; tex
     var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     var TYPES = {
       call: { ic: 'ic-call', sym: '☎' }, ticket_created: { ic: 'ic-ticket', sym: '✓' },
-      email_sent: { ic: 'ic-email', sym: '✉' }, email_failed: { ic: 'ic-fail', sym: '!' }, status_changed: { ic: 'ic-status', sym: '↻' }
+      email_sent: { ic: 'ic-email', sym: '✉' }, email_failed: { ic: 'ic-fail', sym: '!' }, status_changed: { ic: 'ic-status', sym: '↻' }, password_changed: { ic: 'ic-pw', sym: '✱' }
     };
     var evs = [];
     (act.calls || []).forEach(function (c) {
@@ -237,7 +294,7 @@ footer { margin-top: 2rem; font-size: .8rem; opacity: .55; font-weight: 500; tex
         text: [dur, res, c.call_summary_title || c.transcript_summary || ''].filter(Boolean).join(' · '), conv: c.conversation_id });
     });
     (act.events || []).forEach(function (e) {
-      var titles = { ticket_created: 'Ticket created, agent replied', email_sent: 'Emergency email sent', email_failed: 'Emergency email NOT sent', status_changed: 'Status changed' };
+      var titles = { ticket_created: 'Ticket created, agent replied', email_sent: 'Emergency email sent', email_failed: 'Emergency email NOT sent', status_changed: 'Status changed', password_changed: 'Password changed' };
       evs.push({ at: new Date(e.event_at || e.createdAt), type: e.event_type, title: (titles[e.event_type] || e.event_type) + (e.ticket_id ? ' · ' + e.ticket_id : ''), text: e.summary || '' });
     });
     evs = evs.filter(function (e) { return !isNaN(e.at); }).sort(function (a, b) { return b.at - a.at; });

@@ -1,5 +1,5 @@
 {
-  "name": "Growlyze Maintenance Intake - Demo AI",
+  "name": "Property Maintenance Intake - Demo AI",
   "conversation_config": {
     "agent": {
       "first_message": "Thanks for calling the {{COMPANY_NAME}} maintenance line. This is Emma. Is anyone in danger, or is there fire, gas or flooding right now?",
